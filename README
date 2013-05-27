@@ -1,0 +1,147 @@
+(1) azelplot README
+-------------------------------------------------------
+by Ronni Grapenthin, 26 May 2013
+
+azelplot is a fork of Steve Hilla's cf2sky, a program that generates
+a GMT script with corresponding input files, which will plot these
+data (in UNAVCO's compact 2 file format) in a skyplot (azimuth-elevation). 
+
+cf2sky was originally for Windows; azelplot can be considered the 
+Linux port. It should compile under Windows, but I never tested it
+and I doubt the file formats will cooperate. 
+
+Under (2) you find the original instructions by Steve Hilla. Those
+explain where to get and how to install some of the required packages.
+
+I added a Makefile to this version, which you should review and
+edit to meet your needs: 
+
+> make all
+
+will create a binary ``azelplot'' and copy this to /usr/local/bin.
+
+> azelplot INPUTFILE
+
+Is how to call the program. INPUTFILE is a configuration file that
+contains the following information in the respective lines (see
+okfg194.inp):
+
+Line-no		Expected Information
+--------------------------------------------------------------------
+1		Title in the output plot
+2		Plot start time (YYYY MM DD HH MM SS)
+3		Plot end time 
+4		Orbitfile (incl. path) in SP3a format
+5		Cutoff angle, no information will be shown below
+		that angle.
+6		Rinex observation file (incl. path)
+7		Data file to be plotted (in UNAVCO compact 2 
+		format), if it ends in `.rms' the output unit 
+		will be `cm', else `m'
+( 8		Highlight start time )
+( 9		Highlight end time )
+
+The last 2 lines are optional. When used the indicated section
+will be highlighted in red. If INPUTFILE is not given, the 
+program looks for file ``azelplot.inp'' in the current directory.
+
+Calling azelplot will create several output files, one is 
+xxxx*.bat, where xxxx is a 4-char station ID. This is a GMT 
+shell script that needs to be executed to generate the plot.
+The other output file is cleanup*.bat, which can be called 
+after the plot has been generated to delete all the temporary 
+files.
+
+The package comes with a ``test'' directory which contains the
+orbit file, rinex file, phase delay file (.rms), and INPUTFILE
+(rvbm_094.inp) to plot phase delay on 2009-04-04 along the 
+skytracks of the satellites.
+
+(2) Instructions for compiling and using program CF2SKY
+-------------------------------------------------------
+by Steve Hilla, 22 March 2004
+
+The CF2SKY program requires four *.cpp files and five *.h files: consts.h,
+physcon.h, datetime.h, rinex.h, intrpsp3.h, skyplot.cpp, datetime.cpp,
+rinex.cpp, and intrpsp3.cpp. The program was originally compiled
+using Borland C++ Builder Professional Version 5.0 (Build 12.34) Update Pack 
+1.  It was compiled on a PC running Windows NT 4.0 Build 1381: Service
+Pack 6.  If you are using Borland C++ Builder, you should be able to load
+these files into a directory and get the program to compile; the other files
+you need are cf2sky.bpr, and cf2sky.bpf.  The last two files are
+specific to Borland C++ Builder.
+
+There are four example data files included: cha22170.02o, brdc2170.02n,
+cha22171.02o, and cha22171.mp1.  The first two files can be run through TEQC
+to create the third and fourth.  The CF2SKY program can be used on the *.mp1
+file, the cha22171.02o file, and the brdc2170.02n file to create a postscript
+file called skyplot.ps .  
+
+
+Other files:
+
+A PC-executable file is included: cf2sky.exe.  One should be able to run
+this program on the example TEQC plot file, cha22171.mp1, to create a
+postscript file called skyplot.ps using the given cf2sky.inp file.
+This can only be done if the GMT software is loaded on the PC.  The 
+resulting PostScript file, skyplot.ps, can then be viewed or printed if 
+the Ghostview software is installed on the PC.
+
+
+Installing GMT and Ghostview:
+
+A Vol.6, No.3 paper "A new plotting program for Windows-based TEQC users",
+gave the details about where to find GMT and Ghostview and what files to
+read for instructions on how to install these software suites on your PC.
+For convenience, the instructions are repeated below (see "Downloading
+TEQC, GMT, and Ghostview").
+
+After installing the GMT (Generic Mapping Tools) software on the PC make
+sure that it is working by typing a GMT program name at the DOS command
+prompt (e.g. type 'gmtset').  This should start the gmtset program that
+is part of GMT and give you the usage message for program gmtset.  If this
+does not occur then the GMT software is not yet active on your PC and you
+will not be able to successfully run program cf2sky.exe.
+
+After installing the Ghostview software you can verify it is working by
+running the gsview32.exe program from its icon on your desktop and then
+trying to view the example skyplot.ps file included on the website.
+
+
+
+Downloading TEQC, GMT, and Ghostview:
+
+The TEQC program can be downloaded from the UNAVCO website:
+http://www.unavco.ucar.edu/data_support/software/teqc/teqc.html
+From the main TEQC page, scroll down to the section entitled Microsoft Windows
+and DOS zip files. Then download the appropriate zip file for your PC's operating system.
+
+The Generic Mapping Tools (GMT) software can be found at the University of Hawaii, School
+of Ocean and Earth Science and Technology website: http://gmt.soest.hawaii.edu
+Scroll down to the section entitled "GMT master and mirror sites".  Click on one of the
+mirrorsites and download the README.GMT file.  All of the files needed for Windows-users
+are listed as *.zip files; this file explains what each *.zip file contains. To start out
+simple, the reader may wish to download only the following files:
+GMT_exe.zip, GMT_share.zip, GMT_suppl_exe.zip,GMT_pdf.zip, and netcdf-3.5.0.win32bin.zip.
+
+The CF2SKY program uses GMT to create fairly simple XY-plots.
+But the GMT software can also be used to generate high-quality maps 
+using several different coastline data sets.  The reader may wish to download these 
+different coastline files later on for the purpose of building maps.  There are also
+source code files that the reader may wish to download at a later time.  Once the GMT
+software has been unzipped, examine the README.WIN32 file in the main GMT directory for
+instructions on how to configure your PC to run GMT. 
+
+The AFPL Ghostscript software is available from the Computer Science Department at the 
+University of Wisconsin:   http://www.cs.wisc.edu/~ghost
+First click on "Obtaining AFPL Ghostscript 7.04". The acronym AFPL stands for "Alladin
+Free Public License".   Then scroll down to the section entitled "Windows 95, 98, ME,
+NT, 2000 or XP".   Download the files gs704w32.exe and gsv43w32.exe.  Execute the first
+file to install Ghostscript version 7.04.  Then run gsv43w32.exe to install GSview.
+
+Ghostscript/GSview will require about 17 MB of disk space.  The GMT software, using
+just the five *.zip files mentioned above, will require about 22 MB of disk space.
+Since both of these software packages are actively maintained, the reader can expect
+that each of the above mentioned websites will eventually contain future versions of
+the software.
+
