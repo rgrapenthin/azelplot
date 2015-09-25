@@ -12,7 +12,7 @@ export INCLUDE_DIRS    := -I/usr/include -I. -I$(shell pwd)
 export LIB_DIRS        := -L/usr/X11R6/lib
 
 #--- linker options, might be different from plugins', thus local
-LINKER_OPT             := -lstdc++ 
+LINKER_OPT             := -lstdc++ -lm 
 
 #--- debug flag, empty by default, set specifically for each target below
 DEBUG                  := 
