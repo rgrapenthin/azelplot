@@ -41,6 +41,7 @@ const int MAXSVS = 36;
 const int MAXUNK = 28;
 const int MAXEPOCH = 50;    // PRN blocks per file, was 160
 double scaleBar = 0.06;    // was 0.04 for full page
+bool gmt5 = false;
 const double strayLineThreshold = 0.50;  // don't connect setTime with riseTime
 
 double xco[MAXSVS][MAXUNK][MAXEPOCH];
@@ -110,10 +111,51 @@ int main(int args, char* argv[] )
   double dx,dy,az;
   long  teqcStartMJD, lineNum;
   string infile("azelplot.inp");
+  string font_delim(" ");
+  string pen_delim("/");
+  string gmt("");
+  string vector_desc("0.0/0.0/0.0");
+  string pstext_F("");
+  string multi_seg(" -M ");
+
+  if (args == 1  ){ 
+    cout << "Program AZELPLOT (forking cf2sky Version 17 December 2003, edits R. Grapenthin, July 2011)"<<endl;
+    cout << "Version 2015-10-02"<<endl<<endl;
+    cout << "USAGE: azelplot input-file [scale-factor [GMT5]]"<<endl<<endl;
+    cout << "     input-file:   Is a file that drives the execution of "<<endl;
+    cout << "                   this program. Its syntax is as follows: "<<endl<<endl;
+    cout << "                   Line 1: Title of plot"<<endl;
+    cout << "                   Line 2: Plot start time (YYYY MM DD HH mm SS) "<<endl;
+    cout << "                   Line 3: Plot end time (YYYY MM DD HH mm SS) "<<endl;
+    cout << "                   Line 4: Orbit file (SP3 format) "<<endl;
+    cout << "                   Line 5: Cutoff elevation angle "<<endl;
+    cout << "                   Line 6: uncompressed Rinex file (paths possible) "<<endl;
+    cout << "                   Line 7: teqc COMPACT formatted data file "<<endl;
+    cout << "                 [ Line 8: Highlight start time (YYYY MM DD HH mm SS) "<<endl;
+    cout << "                   Line 9: Highlight end time (YYYY MM DD HH mm SS)   ] "<<endl<<endl;
+    cout << "     scale-factor: increase / decrease data plot line length (default: 0.06) "<<endl<<endl;
+    cout << "     GMT5:         Use this exact string (GMT5) to generate GMT5 compatible  "<<endl;
+    cout << "                   plotting commands."<<endl<<endl;
+    return -1;
+  }
   
   if (args > 1  ){ infile = argv[1]; }
   if (args == 3 ){ scaleBar = atof(argv[2]);}
+  if (args == 4 ){ 
+        scaleBar = atof(argv[2]);
+        if (string(argv[3]) == "GMT5"){
+            gmt5     = true;
+        }
+  }
 
+  if (gmt5 == true){
+    font_delim = string(",");
+    pen_delim  = string(",");
+    vector_desc= string("0");
+    gmt        = string("gmt "); 
+    pstext_F   = string(" -F+f+a+j ");
+    multi_seg  = string("");
+  }
 
   for (i=0; i < 40; ++i ) {
     arrowsx[i][0] = -9999.0;
@@ -132,8 +174,8 @@ int main(int args, char* argv[] )
       cerr << "Error opening azelplot.log ! " << endl;
       return -1;
     }
-  out << endl << "Program AZELPLOT (forking cf2sky Version 17 December 2003, edits R. Grapenthin, July 2011)" << endl;
-  out << endl << "Version 2013-05-26"<<endl<<endl;
+  out << endl << "Program AZELPLOT (forking cf2sky Version 17 December 2003, edits R. Grapenthin, since July 2011)" << endl;
+  out << endl << "Version 2015-10-02"<<endl<<endl;
   out.setf( ios::fixed, ios::floatfield );
 
   ifstream inp(infile.c_str());
@@ -255,6 +297,7 @@ if(!inp.eof( )){
   }
 
 
+  out << "Use GMT5? " << gmt5 << endl;
   out << "Input file: " << infile << endl;
   out.precision(0);
   out << year1 << " " << mon1 << " " <<  day1 << " " << hr1 << " " <<
@@ -303,13 +346,13 @@ if(!inp.eof( )){
   outtt.setf( ios::fixed, ios::floatfield);
 
   outtt << setw(2) << setprecision(0);
-  outtt << "0 2.3  12 0 0 CM " << stemp << endl;
-  outtt << "0 2.1  8 0 0 CM Lat: "
+  outtt << "0 2.3  12" << font_delim << "0 0 CM " << stemp << endl;
+  outtt << "0 2.1  8"  << font_delim << "0 0 CM Lat: "
    << setw(10) << setprecision(4) << lat * 180.0 /jpi << "\xB0    Lon:  "
    << setw(10) << setprecision(4) << lon * 180.0 /jpi << "\xB0    Ell Ht:  "
    << setw(10) << setprecision(1) << htt <<  " m " <<
    endl;
-  outtt << "0 1.95  8 0 0 CM GPS Time:  "
+  outtt << "0 1.95  8" << font_delim << "0 0 CM GPS Time:  "
   << setw(2) << setprecision(0)
   << year1 << "/" << padZeros(mon1) << "/"  <<
   padZeros(day1) << " " << padZeros(hr1) << ":"
@@ -331,22 +374,26 @@ if(!inp.eof( )){
 
 #ifdef __linux__  
   chmod(batchFile.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);    
-
   outbat << "#!/bin/tcsh" << endl;
 #endif
-  outbat << "psxy " << elevRingFile << " -R-1.6/1.6/-1.6/1.6 -JX7.0  -W1.0p/0/0/0 -G230 -V -M -K -P -X0.75 -Y1.0 > " << psFile << endl;
-  outbat << "psxy " << cutoffRingFile << " -R -JX  -W0.2t4_8:0p  -G255 -V -M -O -K -P >> " << psFile << endl;
-  outbat << "psxy " << elevRingFile << " -R -JX  -W1.0p/0/0/0  -V -M -O -K -P >> " << psFile << endl;
-  outbat << "psxy " << elevRingFile << " -R -JX  -W0.5p/255/255/255  -V -M -O -K -P >> " << psFile << endl;
-  outbat << "pstext " << titleFile << " -R -JX  -N -V  -O -K -P >> " << psFile << endl;
 
-  outbat << "psvelo " << mpFile << " -R -JX  -L  -W0.5p/175/175/175 -Se1/0.95/0 -A0.0/0.0/0.0 " <<
-	" -N  -H0 -O -K -P -V >>  " << psFile << endl;
+  outbat << gmt << "psxy " << elevRingFile << " -R-1.6/1.6/-1.6/1.6 -JX7.0  -W1.0p" << pen_delim << "0/0/0 -G230 -V " << multi_seg << " -K -P -X0.75 -Y1.0 > " << psFile << endl;
+  if(gmt5==true){
+    outbat << gmt << "psxy " << cutoffRingFile << " -R -JX  -W0.2,0,4_8:0p  -G255 -V " << multi_seg << " -O -K -P >> " << psFile << endl;
+  }else{
+    outbat << gmt << "psxy " << cutoffRingFile << " -R -JX  -W0.2t4_8:0p  -G255 -V " << multi_seg << " -O -K -P >> " << psFile << endl;
+  }
+  outbat << gmt << "psxy " << elevRingFile << " -R -JX -W1.0p" << pen_delim << "0/0/0  -V " << multi_seg << " -O -K -P >> " << psFile << endl;
+  outbat << gmt << "psxy " << elevRingFile << " -R -JX -W0.5p" << pen_delim << "255/255/255  -V " << multi_seg << " -O -K -P >> " << psFile << endl;
+  outbat << gmt << "pstext " << titleFile << pstext_F <<" -R -JX -N -V  -O -K -P >> " << psFile << endl;
+
+  outbat << gmt << "psvelo " << mpFile << " -R -JX  -L -W0.5p" << pen_delim << "175/175/175 -Se1/0.95/0 -A"<< vector_desc <<
+	" -N  -O -K -P -V >>  " << psFile << endl;
 
   if(highlight)
   {
-	outbat << "psvelo " << mpHighlightFile << " -R -JX  -L  -W0.5p/200/0/0 -Se1/0.95/0 -A0.0/0.0/0.0 " <<
-	" -N  -H0 -O -K -P -V >>  " << psFile << endl;
+	outbat << gmt << "psvelo " << mpHighlightFile << " -R -JX  -L -W0.5p" << pen_delim << "200/0/0 -Se1/0.95/0 -A"<< vector_desc <<
+	" -N  -O -K -P -V >>  " << psFile << endl;
   }
 
   // broadcast or precise?
@@ -367,26 +414,26 @@ if(!inp.eof( )){
       try{ mynav.setPathFilenameMode( orbfile, ios_base::in);  }
       catch( RinexFileException &openExcep )
 	{
-	  cout << "Error opening file: " << orbfile << endl;
-	  cout << "Rinex File Exception is: " << endl << openExcep.getMessage() << endl;
-	  cout << endl << "Error Messages for " << orbfile << " :" << endl
+	  cerr << "Error opening file: " << orbfile << endl;
+	  cerr << "Rinex File Exception is: " << endl << openExcep.getMessage() << endl;
+	  cerr << endl << "Error Messages for " << orbfile << " :" << endl
 	      << mynav.getErrorMessages() << endl << endl;
-	  cout << endl << "Format Warnings for " << orbfile << " :" << endl
+	  cerr << endl << "Format Warnings for " << orbfile << " :" << endl
 	      << mynav.getWarningMessages() << endl << endl << endl;
-	  cout << "Terminating program POINT due to an error." << endl;
+	  cerr << "Terminating program POINT due to an error." << endl;
 	}
 
       //cout << endl << "NV::Header for RINEX NAV file: " << orbfile << endl;
       try{ bcread(mynav, out);  }
       catch( RequiredRecordMissingException &headerExcep )
 	{
-	  cout << "RequiredRecordMissingException is: " << endl
+	  cerr << "RequiredRecordMissingException is: " << endl
 	      << headerExcep.getMessage() << endl;
-	  cout << endl << "Error Messages for " << orbfile << " :" << endl
+	  cerr << endl << "Error Messages for " << orbfile << " :" << endl
 	      << mynav.getErrorMessages() << endl << endl;
-	  cout << endl << "Format Warnings for " << orbfile << " :" << endl
+	  cerr << endl << "Format Warnings for " << orbfile << " :" << endl
 	      << mynav.getWarningMessages() << endl << endl << endl;
-	  cout << "Terminating program POINT due to an error." << endl;
+	  cerr << "Terminating program POINT due to an error." << endl;
 	}
 
     } else {
@@ -447,16 +494,15 @@ if(!inp.eof( )){
 
   azelOut.setf( ios::fixed, ios::floatfield );
 
-
   // Open the TEQC plot file
 
    ifstream cfplt( teqcPltFile.c_str() );
    if( !cfplt )
    {
-     out << "Error! Cannot open file: " << teqcPltFile.c_str() << endl
-     << "Now terminating Program AZELPLOT." << endl << endl;
-     cerr << "Error! Cannot open file: " << teqcPltFile.c_str() << endl
-     << "Now terminating Program AZELPLOT." << endl << endl;
+     out  << "Error! Cannot open file: " << teqcPltFile.c_str() << endl
+          << "Now terminating Program AZELPLOT." << endl << endl;
+     cerr << "Error! Cannot open file: " << teqcPltFile.c_str() << endl 
+          << "Now terminating Program AZELPLOT." << endl << endl;
      return -1;
    }
 
@@ -464,20 +510,16 @@ if(!inp.eof( )){
    temp = buf.substr( 0, 7 );
    if( temp != "COMPACT" )
    {
-     cerr << "WARNING! First Line in teqc plot file is not the word COMPACT!"
-     << endl;
-     out << "WARNING! First Line in teqc plot file is not the word COMPACT!"
-     << endl;
+     cerr << "WARNING! First Line in teqc plot file is not the word COMPACT!" << endl;
+     out  << "WARNING! First Line in teqc plot file is not the word COMPACT!" << endl;
    }
 
    getline( cfplt, buf );  // **** read the second line
    temp = buf.substr( 0, 3 );
    if( temp != "SVS" )
    {
-     cerr << "WARNING! Second Line in teqc plot file does not start with SVS!"
-     << endl;
-     out << "WARNING! Second Line in teqc plot file does not start with SVS!"
-     << endl;
+     out  << "WARNING! Second Line in teqc plot file does not start with SVS!" << endl;
+     cerr << "WARNING! Second Line in teqc plot file does not start with SVS!"<< endl;
    }
    fileNumPrns = (buf.length() - 5 )/6;
    for( i = 0; i < fileNumPrns; ++i)
@@ -488,38 +530,37 @@ if(!inp.eof( )){
      itemp = atoi(temp.c_str());
      if( itemp != prnIDs[i] )
      {
-        cerr << "Warning! unequal satellite IDs found in header for file: "
-        << teqcPltFile.c_str() << endl << endl;
-        out << "Warning! unequal satellite IDs found in header for file: "
-        << teqcPltFile.c_str() << endl << endl;
+        out  << "Warning! unequal satellite IDs found in header for file: " << teqcPltFile.c_str() << endl << endl;
+        cerr << "Warning! unequal satellite IDs found in header for file: " << teqcPltFile.c_str() << endl << endl;
      }
    }
 
    getline( cfplt, buf );  // **** read the third line
    temp = buf.substr( 0, 6 );
+
    if( temp != "T_SAMP" )
    {
-     cerr << "WARNING! Third Line in teqc plot file does not start with T_SAMP!"
-     << endl;
-     out << "WARNING! Third Line in teqc plot file does not start with T_SAMP!"
-     << endl;
+     out  << "WARNING! Third Line in teqc plot file does not start with T_SAMP!" << endl;
+     cerr << "WARNING! Third Line in teqc plot file does not start with T_SAMP!" << endl;
    }
+   
    temp = buf.substr( 6, 10);
    sampleRate = atof(temp.c_str());
 
-
    getline( cfplt, buf );  // **** read the fourth line
    temp = buf.substr( 0, 14 );
+
    if( temp != "START_TIME_MJL" )
    {
-     cerr << "WARNING! 4th Line in teqc plot file does not start with START_TIME_MJL!"
-     << endl << "Terminating program." << endl << endl;
-     out << "WARNING! 4th Line in teqc plot file does not start with START_TIME_MJL!"
-     << endl << "Terminating program." << endl << endl;
+     out  << "WARNING! 4th Line in teqc plot file does not start with START_TIME_MJL!" << endl 
+          << "Terminating program." << endl << endl;
+     cerr << "WARNING! 4th Line in teqc plot file does not start with START_TIME_MJL!" << endl 
+          << "Terminating program." << endl << endl;
      out.close();
      cfplt.close();
      exit(1);
    }
+
    temp = buf.substr( 14, 7);
    teqcStartMJD = atol(temp.c_str());
    temp = buf.substr( 21, 7);
@@ -530,12 +571,12 @@ if(!inp.eof( )){
 
    if( endTime < teqcStartTime )
    {
-     out << "Error. User's Stop Time is before the TEQC file starts ! " << endl
-     << "User Stop Time (MJD): " << endTime << "  File Start Time (YMDHMS): "
-     << teqcStartTime << endl << "Terminating program." << endl << endl;
+     out  << "Error. User's Stop Time is before the TEQC file starts ! " << endl
+          << "User Stop Time (MJD): " << endTime << "  File Start Time (YMDHMS): " << teqcStartTime << endl 
+          << "Terminating program." << endl << endl;
      cerr << "Error. User's Stop Time is before the TEQC file starts ! " << endl
-     << "User Stop Time (MJD): " << endTime << "  File Start Time (YMDHMS): "
-     << teqcStartTime << endl << "Terminating program." << endl << endl;
+          << "User Stop Time (MJD): " << endTime << "  File Start Time (YMDHMS): " << teqcStartTime << endl 
+          << "Terminating program." << endl << endl;
      cfplt.close();
      out.close();
      exit(1);
@@ -543,13 +584,13 @@ if(!inp.eof( )){
 
   ofstream mp( mpFile.c_str() );
   if ( ! mp ) {
-    cout << "ERROR: cannot open " << mpFile << " ! " << endl;
+    cerr << "ERROR: cannot open " << mpFile << " ! " << endl;
     exit(0);
   }
 
   ofstream mpHighlight( mpHighlightFile.c_str() );
   if ( ! mpHighlight ) {
-    cout << "ERROR: cannot open " << mpHighlightFile << " ! " << endl;
+    cerr << "ERROR: cannot open " << mpHighlightFile << " ! " << endl;
     exit(0);
   }
 
@@ -562,11 +603,9 @@ if(!inp.eof( )){
 //  mp << " 1.1  -1.39  " << 1.0*scaleBar << "  0.0  0  0  0" << endl;
   mp << " 1.35  -1.39  " << -1.0*scaleBar << "  0.0  0  0  0" << endl;
 
-
-
 //ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
    cout << endl << "Now reading the TEQC plot file..." << endl << endl;
-   out << endl << "Now reading the TEQC plot file..." << endl << endl;
+   out  << endl << "Now reading the TEQC plot file..." << endl << endl;
    lineNum = 4;
   
   while( getline( cfplt, buf ) )  // **** loop to read two lines for each epoch
@@ -577,7 +616,7 @@ if(!inp.eof( )){
 
      //forward to user start time
      if( currEpoch < startTime ){
-	getline( cfplt, buf ); ++lineNum; continue;
+        getline( cfplt, buf ); ++lineNum; continue;
      }
      //stop if we're past endTime 
      if( currEpoch > endTime ) break;
@@ -592,7 +631,7 @@ if(!inp.eof( )){
      for( i = 0; i < MAXSVS; ++i )
        currData[i] = 0.0;
 
- 
+
      if( itemp == 0 )
      {
        // zero means there is data for zero satellites at this epoch
@@ -608,9 +647,8 @@ if(!inp.eof( )){
        {
         inString >> dtemp;
         prnNum = currPRNs[i];
-	currData[prnNum] = dtemp;
+        currData[prnNum] = dtemp;
        } 
-
      }
      else if( itemp >= 1 ) // when itemp >= 1, read in new list of PRNs
      {
@@ -619,7 +657,7 @@ if(!inp.eof( )){
        temp = buf.substr(2, buf.length());
        prnList.str( temp );
        for( i = 0; i < currNumPrns; ++i )
-         prnList >> currPRNs[i];
+          prnList >> currPRNs[i];
 
        getline( cfplt, buf );
        lineNum++;
@@ -636,12 +674,12 @@ if(!inp.eof( )){
      }
      else
      {
-        cerr << "Number of satellites incorrect on line number: " << lineNum
-        << endl << buf << endl << endl;
+        out  << "Number of satellites incorrect on line number: " << lineNum << endl 
+             << buf << endl << endl;
+        out  << "Now terminating Program CF2SKY." << endl << endl;
+        cerr << "Number of satellites incorrect on line number: " << lineNum << endl 
+             << buf << endl << endl;
         cerr << "Now terminating Program CF2SKY." << endl << endl;
-        out << "Number of satellites incorrect on line number: " << lineNum
-        << endl << buf << endl << endl;
-        out << "Now terminating Program CF2SKY." << endl << endl;
         return -1;
      }
 
@@ -655,26 +693,26 @@ if(!inp.eof( )){
 
         if ( broadcastExist )
         {
-	  ierr = bcorb( t_r, i, bcpos, bcvel);       //BR
+          ierr = bcorb( t_r, i, bcpos, bcvel);       //BR
           if ( fabs( bcpos[0] ) < 1.0e-8 )
           {
            ierr = 1;
           }
           else
           {
-   	   svpos[0] = bcpos[0];
-	   svpos[1] = bcpos[1];
-	   svpos[2] = bcpos[2];
+            svpos[0] = bcpos[0];
+            svpos[1] = bcpos[1];
+            svpos[2] = bcpos[2];
 	   //cout <<  i << "    " << svpos[0] << "  " << svpos[1] << " "
            // << svpos[2] << endl;
           }
         }
         else
         {
-	  ierr = (int) mysp3.getSVPosVel( currEpoch, (unsigned short) prnNum, pvVec);
-          svpos[0] = pvVec[0] * 1000.0;
-	  svpos[1] = pvVec[1] * 1000.0;
-	  svpos[2] = pvVec[2] * 1000.0;
+            ierr = (int) mysp3.getSVPosVel( currEpoch, (unsigned short) prnNum, pvVec);
+            svpos[0] = pvVec[0] * 1000.0;
+            svpos[1] = pvVec[1] * 1000.0;
+            svpos[2] = pvVec[2] * 1000.0;
         }
 
         if ( ierr == 0 )
@@ -750,7 +788,7 @@ if(!inp.eof( )){
 //	      (int) ymdhms.hour << "h" << endl;
 
 		if ((int) roundoff(tt) > hr1 &&  (int) roundoff(tt) < hr2)
-			hourstamps << (xmap+0.02) << " " << ymap << " 6 0 9 ML " << (int) roundoff(tt) << endl;
+			hourstamps << (xmap+0.02) << " " << ymap << " 6" <<font_delim << "0 0 ML " << (int) roundoff(tt) << endl;
 
               hourdots << xmap << " " << ymap << endl;
 	    }
@@ -826,12 +864,12 @@ if(!inp.eof( )){
    // check that the file stop time agrees with the user's start time
    if( currEpoch < startTime  )
    {
-     out << "Error. File Stop Time is before the User's Start Time! " << endl
-     << "File Stop Time (YMDHMS): " << currEpoch << "  User Start Time (YMDHMS): "
-     << startTime << endl << "Terminating program." << endl << endl;
+     out  << "Error. File Stop Time is before the User's Start Time! " << endl
+          << "File Stop Time (YMDHMS): " << currEpoch << "  User Start Time (YMDHMS): "
+          << startTime << endl << "Terminating program." << endl << endl;
      cerr << "Error. File Stop Time is before the User's Start Time! " << endl
-     << "File Stop Time (YMDHMS): " << currEpoch << "  User Start Time (YMDHMS): "
-     << startTime << endl << "Terminating program." << endl << endl;
+          << "File Stop Time (YMDHMS): " << currEpoch << "  User Start Time (YMDHMS): "
+          << startTime << endl << "Terminating program." << endl << endl;
      out.close();
      exit(1);
    }
@@ -841,8 +879,6 @@ if(!inp.eof( )){
   azelOut.close();
 
   out << "\n\nFinished writing azimuth/elevation " << endl;
-
-
 
   // arrow data
 
@@ -867,7 +903,7 @@ if(!inp.eof( )){
       arrowsf << arrowsx[i][1] << "  " << arrowsy[i][1] << " " << dx << " " <<
 	dy << " 0 0 0 " << i << endl;
 
-	outbat << "psxy " << i << satFileExt << " -R -JX -W0.15p/0 -V -P -M -O -K >> " << psFile << endl;
+	outbat << gmt << "psxy " << i << satFileExt << " -R -JX -W0.15p" << pen_delim << "0 -V -P " << multi_seg << " -O -K >> " << psFile << endl;
 
     }
   }
@@ -1085,13 +1121,18 @@ if(!inp.eof( )){
 
   nesw.close();
 
-  outbat << "psxy " << timeXYFile << " -R -JX -V  -Sc0.03 -G0/0/0  -O -K -P >> " << psFile << endl;
-  outbat << "pstext " << timeTagFile << " -R -JX -V -G0/0/0  -O -K -P >> " << psFile << endl;
-  outbat << "psxy " << crossFile << " -R -JX   -V -M -O -K -P >> " << psFile << endl;
-  outbat << "pstext " << neswFile << "  -R  -JX -O -K  -N   >> " << psFile << endl;
-  outbat << "psvelo " << arrowsFile << " -R -JX  -L  -W1.0p/50/50/50 -Se1/0.95/7 -A0.0020/0.035/0.025 " <<
-    " -N  -H0 -O -K -P -V >> " << psFile << endl;
-  outbat << "pstext " << ringTxtFile << " -R  -JX -O -N -W255o  >> " << psFile << endl;
+  outbat << gmt << "psxy " << timeXYFile << " -R -JX -V  -Sc0.03 -G0 -O -K -P >> " << psFile << endl;
+  outbat << gmt << "pstext " << timeTagFile << pstext_F << " -R -JX -V -O -K -P >> " << psFile << endl;
+  outbat << gmt << "psxy " << crossFile << " -R -JX -V " << multi_seg << " -O -K -P >> " << psFile << endl;
+  outbat << gmt << "pstext " << neswFile << pstext_F << "  -R  -JX -O -K  -N   >> " << psFile << endl;
+  if(gmt5 == true){
+      outbat << gmt << "psvelo " << arrowsFile << " -R -JX  -L  -W1.0p" << pen_delim << "50/50/50 -Se1/0.95/7 -A10p+e+g0+p3p,0 -N -O -K -P -V >> " << psFile << endl;
+      outbat << gmt << "pstext " << ringTxtFile << pstext_F << " -: -R  -JX -O -N -W0 -G255  >> " << psFile << endl;
+  }
+  else{
+      outbat << gmt << "psvelo " << arrowsFile << " -R -JX  -L  -W1.0p" << pen_delim << "50/50/50 -Se1/0.95/7 -A0.0020/0.035/0.025 -N -O -K -P -V >> " << psFile << endl;
+      outbat << gmt << "pstext " << ringTxtFile << " -R  -JX -O -N -W255o  >> " << psFile << endl;
+  }
   outbat << "eps2eps " << psFile << " " << psFile << ".eps" << endl;
   outbat << "epstopdf " << psFile << ".eps" << endl;
   outbat << "echo ------------------------------ " << endl;
@@ -1103,8 +1144,7 @@ if(!inp.eof( )){
   out << "\n\nNormal Termination " << endl;
 
   out.close();
-  cerr << "\n\nNormal Termination for Program CF2SKY.   " <<
-   "Issue the command '"<<batchFile<<"' to generate '"<< psFile <<"' " <<  endl;
+  cerr << "\n\nNormal Termination for Program CF2SKY.\n Issue the command '"<<batchFile<<"' to generate '"<< psFile <<"' " <<  endl;
 
    return 0;
 }
