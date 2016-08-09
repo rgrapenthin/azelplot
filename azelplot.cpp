@@ -84,6 +84,7 @@ int main(int args, char* argv[] )
   int  year2, mon2, day2, hr2, min2, sec2;
   int  h_year1, h_mon1, h_day1, h_hr1, h_min1, h_sec1;
   int  h_year2, h_mon2, h_day2, h_hr2, h_min2, h_sec2;
+  string color("175/175/175"), highlightColor("200/0/0");
   DateTime startTime;
   DateTime endTime;
   DateTime startHighlightTime;
@@ -124,15 +125,17 @@ int main(int args, char* argv[] )
     cout << "USAGE: azelplot input-file [scale-factor [GMT5]]"<<endl<<endl;
     cout << "     input-file:   Is a file that drives the execution of "<<endl;
     cout << "                   this program. Its syntax is as follows: "<<endl<<endl;
-    cout << "                   Line 1: Title of plot"<<endl;
-    cout << "                   Line 2: Plot start time (YYYY MM DD HH mm SS) "<<endl;
-    cout << "                   Line 3: Plot end time (YYYY MM DD HH mm SS) "<<endl;
-    cout << "                   Line 4: Orbit file (SP3 format) "<<endl;
-    cout << "                   Line 5: Cutoff elevation angle "<<endl;
-    cout << "                   Line 6: uncompressed Rinex file (paths possible) "<<endl;
-    cout << "                   Line 7: teqc COMPACT formatted data file "<<endl;
-    cout << "                 [ Line 8: Highlight start time (YYYY MM DD HH mm SS) "<<endl;
-    cout << "                   Line 9: Highlight end time (YYYY MM DD HH mm SS)   ] "<<endl<<endl;
+    cout << "                   Line  1: Title of plot"<<endl;
+    cout << "                   Line  2: Plot start time (YYYY MM DD HH mm SS) "<<endl;
+    cout << "                   Line  3: Plot end time (YYYY MM DD HH mm SS) "<<endl;
+    cout << "                   Line  4: Orbit file (SP3 format) "<<endl;
+    cout << "                   Line  5: Cutoff elevation angle "<<endl;
+    cout << "                   Line  6: uncompressed Rinex file (paths possible) "<<endl;
+    cout << "                   Line  7: teqc COMPACT formatted data file "<<endl;
+    cout << "                   Line  8: color (GMT COLOR STRING) "<<endl;
+    cout << "                 [ Line  9: Highlight start time (YYYY MM DD HH mm SS) "<<endl;
+    cout << "                   Line 10: Highlight end time (YYYY MM DD HH mm SS)   "<<endl<<endl;
+    cout << "                   Line 11: Highlight color (GMT COLOR STRING)                  ]"<<endl<<endl;
     cout << "     scale-factor: increase / decrease data plot line length (default: 0.06) "<<endl<<endl;
     cout << "     GMT5:         Use this exact string (GMT5) to generate GMT5 compatible  "<<endl;
     cout << "                   plotting commands."<<endl<<endl;
@@ -192,17 +195,18 @@ int main(int args, char* argv[] )
   inp >> year2 >> mon2 >> day2 >> hr2 >> min2 >> sec2;
   inp >> orbfile;
   inp >> cutoffAngle;
-//  inp.get( title, 256 );
   inp >> rinexObsFile;
   inp >> teqcPltFile;
-//  inp >> index; //RG: unused?
-//RG: add `highlighting bracket`
+  inp >> color;
 if(!inp.eof( )){
   inp >> h_year1 >> h_mon1 >> h_day1 >> h_hr1 >> h_min1 >> h_sec1;
   startHighlightTime = DateTime( h_year1, h_mon1, h_day1, h_hr1, h_min1, h_sec1 );
   if(!inp.eof( )){
     inp >> h_year2 >> h_mon2 >> h_day2 >> h_hr2 >> h_min2 >> h_sec2;
     endHighlightTime   = DateTime( h_year2, h_mon2, h_day2, h_hr2, h_min2, h_sec2 );
+    if(!inp.eof( )){
+        inp >> highlightColor;
+    }
   }
 }
   inp.close();
@@ -387,12 +391,12 @@ if(!inp.eof( )){
   outbat << gmt << "psxy " << elevRingFile << " -R -JX -W0.5p" << pen_delim << "255/255/255  -V " << multi_seg << " -O -K -P >> " << psFile << endl;
   outbat << gmt << "pstext " << titleFile << pstext_F <<" -R -JX -N -V  -O -K -P >> " << psFile << endl;
 
-  outbat << gmt << "psvelo " << mpFile << " -R -JX  -L -W0.5p" << pen_delim << "175/175/175 -Se1/0.95/0 -A"<< vector_desc <<
+  outbat << gmt << "psvelo " << mpFile << " -R -JX  -L -W0.5p" << pen_delim << color << " -Se1/0.95/0 -A"<< vector_desc <<
 	" -N  -O -K -P -V >>  " << psFile << endl;
 
   if(highlight)
   {
-	outbat << gmt << "psvelo " << mpHighlightFile << " -R -JX  -L -W0.5p" << pen_delim << "200/0/0 -Se1/0.95/0 -A"<< vector_desc <<
+	outbat << gmt << "psvelo " << mpHighlightFile << " -R -JX  -L -W0.5p" << pen_delim << highlightColor << " -Se1/0.95/0 -A"<< vector_desc <<
 	" -N  -O -K -P -V >>  " << psFile << endl;
   }
 
@@ -1048,21 +1052,21 @@ if(!inp.eof( )){
   y = 0;
   x = jpi / 2.0 - 0.0;
   //   \xB0 make the degree symbol
-  outring << x << "  " << y  << " 6 0 0 CM  0\xB0"	<< endl;;
+  outring << x << "  " << y  << " 6"<< font_delim <<"0 0 CM  0\xB0"	<< endl;
 
   x = jpi / 2.0 - 30.0 * jpi/ 180.0;
-  outring << x << "  " << y  << " 6 0 0 CM 30\xB0" << endl;;
+  outring << x << "  " << y  << " 6"<< font_delim <<"0 0 CM 30\xB0" << endl;
 
 
   x = jpi / 2.0 - 60.0 * jpi/ 180.0;
-  outring  << x << " " << y << " 6 0 0 CM 60\xB0" << endl;;
+  outring  << x << " " << y << " 6"<< font_delim <<"0 0 CM 60\xB0" << endl;
 
   x = jpi / 2.0 - 90.0 * jpi/ 180.0;
-  outring  << x << " " << y << " 6 0 0 CM 90\xB0" << endl;;
+  outring  << x << " " << y << " 6"<< font_delim <<"0 0 CM 90\xB0" << endl;
 
   x = jpi / 2.0 - cutoffAngle * jpi/ 180.0;
-  outring  << -x << " " << y << " 6 0 0 CM " <<
-    cutoffAngle << "\xB0" << endl;;
+  outring  << -x << " " << y << " 6"<< font_delim <<"0 0 CM " <<
+    cutoffAngle << "\xB0" << endl;
 
   outring.close();
 
@@ -1078,29 +1082,28 @@ if(!inp.eof( )){
 
   y = 15 * 3.1415/180;
 
-  nesw << 0 << " " <<  100 * 3.1415/180 << "  8 0 0 CM N" << endl;
-  nesw << 0 << " " << -100 * 3.1415/180 << "  8 0 0 CM S" << endl;
-  nesw << -100 * 3.1415/180 << " " << 0 << "  8 0 0 CM W" << endl;
-  nesw <<  100 * 3.1415/180 << " " << 0 << "  8 0 0 CM E" << endl;
-
+  nesw << 0 << " " <<  100 * 3.1415/180 << "  8"<< font_delim <<"0 0 CM N" << endl;
+  nesw << 0 << " " << -100 * 3.1415/180 << "  8"<< font_delim <<"0 0 CM S" << endl;
+  nesw << -100 * 3.1415/180 << " " << 0 << "  8"<< font_delim <<"0 0 CM W" << endl;
+  nesw <<  100 * 3.1415/180 << " " << 0 << "  8"<< font_delim <<"0 0 CM E" << endl;
 
   rtemp += 4.0;
 
   x = sin(jpi/4.0)*( rtemp * jpi/180.0) ;
   y = cos(jpi/4.0)*( rtemp * jpi/180.0) ;
-  nesw << x << " " << y  <<  "  8 0 0 CM 45\xB0" << endl;
+  nesw << x << " " << y  <<  "  8"<< font_delim <<"0 0 CM 45\xB0" << endl;
 
   x = sin(jpi/4.0)*( rtemp * jpi/180.0) ;
   y = -cos(jpi/4.0)*( rtemp * jpi/180.0) ;
-  nesw << x << " " << y  <<  "  8 0 0 CM 135\xB0" << endl;
+  nesw << x << " " << y  <<  "  8"<< font_delim <<"0 0 CM 135\xB0" << endl;
 
   x = -sin(jpi/4.0)*( rtemp * jpi/180.0) ;
   y = -cos(jpi/4.0)*( rtemp * jpi/180.0) ;
-  nesw << x << " " << y  <<  "  8 0 0 CM 225\xB0" << endl;
+  nesw << x << " " << y  <<  "  8"<< font_delim <<"0 0 CM 225\xB0" << endl;
 
   x = -sin(jpi/4.0)*( rtemp * jpi/180.0) ;
   y = cos(jpi/4.0)*( rtemp * jpi/180.0) ;
-  nesw << x << " " << y  <<  "  8 0 0 CM 315\xB0" << endl;
+  nesw << x << " " << y  <<  "  8"<< font_delim <<"0 0 CM 315\xB0" << endl;
 
   // create a legend showing the size of the multipath bars
   string unit("m");
@@ -1114,10 +1117,16 @@ if(!inp.eof( )){
 	out << "\n\nFound teqc plot file extension: " << extension << " which changes unit from 'm' to 'cm' " << endl;
 	cerr << "\n\nFound teqc plot file extension: " << extension << " which changes unit from 'm' to 'cm' " << endl;
   }
+
+  if(extension == "snr" ){
+	unit="db-Hz";
+	out << "\n\nFound teqc plot file extension: " << extension << " which changes unit from 'm' to 'db-Hz' " << endl;
+	cerr << "\n\nFound teqc plot file extension: " << extension << " which changes unit from 'm' to 'db-Hz' " << endl;
+  }	  
 	  
-  nesw << " 1.7  -1.59  8  0  0  RM  10 " << unit << endl;
-  nesw << " 1.7  -1.49  8  0  0  RM  5 " << unit << endl;
-  nesw << " 1.7  -1.39  8  0  0  RM  1 " << unit << endl;
+  nesw << " 1.7  -1.59  8"<< font_delim <<"0  0  RM  10 " << unit << endl;
+  nesw << " 1.7  -1.49  8"<< font_delim <<"0  0  RM  5 " << unit << endl;
+  nesw << " 1.7  -1.39  8"<< font_delim <<"0  0  RM  1 " << unit << endl;
 
   nesw.close();
 
