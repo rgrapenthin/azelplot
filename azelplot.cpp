@@ -381,6 +381,7 @@ if(!inp.eof( )){
   outbat << "#!/bin/tcsh" << endl;
 #endif
 
+  outbat << gmt << "gmtset PS_MEDIA Custom_250x280" << endl;
   outbat << gmt << "psxy " << elevRingFile << " -R-1.6/1.6/-1.6/1.6 -JX7.0  -W1.0p" << pen_delim << "0/0/0 -G230 -V " << multi_seg << " -K -P -X0.75 -Y1.0 > " << psFile << endl;
   if(gmt5==true){
     outbat << gmt << "psxy " << cutoffRingFile << " -R -JX  -W0.2,0,4_8:0p  -G255 -V " << multi_seg << " -O -K -P >> " << psFile << endl;
@@ -1142,8 +1143,9 @@ if(!inp.eof( )){
       outbat << gmt << "psvelo " << arrowsFile << " -R -JX  -L  -W1.0p" << pen_delim << "50/50/50 -Se1/0.95/7 -A0.0020/0.035/0.025 -N -O -K -P -V >> " << psFile << endl;
       outbat << gmt << "pstext " << ringTxtFile << " -R  -JX -O -N -W255o  >> " << psFile << endl;
   }
-  outbat << "eps2eps " << psFile << " " << psFile << ".eps" << endl;
-  outbat << "epstopdf " << psFile << ".eps" << endl;
+//  outbat << "eps2eps " << psFile << " " << psFile << ".eps" << endl;
+//  outbat << "epstopdf " << psFile << ".eps" << endl;
+  outbat << "epstopdf " << psFile << endl;
   outbat << "echo ------------------------------ " << endl;
   outbat << "echo ------------------------------ " << endl;
   outbat << "echo View or print " << psFile << endl;
