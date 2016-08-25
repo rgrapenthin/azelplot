@@ -42,6 +42,7 @@ const int MAXUNK = 28;
 const int MAXEPOCH = 50;    // PRN blocks per file, was 160
 double scaleBar = 0.06;    // was 0.04 for full page
 bool gmt5 = false;
+bool lite = false;
 const double strayLineThreshold = 0.50;  // don't connect setTime with riseTime
 
 double xco[MAXSVS][MAXUNK][MAXEPOCH];
@@ -121,8 +122,8 @@ int main(int args, char* argv[] )
 
   if (args == 1  ){ 
     cout << "Program AZELPLOT (forking cf2sky Version 17 December 2003, edits R. Grapenthin, July 2011)"<<endl;
-    cout << "Version 2015-10-02"<<endl<<endl;
-    cout << "USAGE: azelplot input-file [scale-factor [GMT5]]"<<endl<<endl;
+    cout << "Version 2016-08-25"<<endl<<endl;
+    cout << "USAGE: azelplot input-file [scale-factor [GMT5 [lite]]]"<<endl<<endl;
     cout << "     input-file:   Is a file that drives the execution of "<<endl;
     cout << "                   this program. Its syntax is as follows: "<<endl<<endl;
     cout << "                   Line  1: Title of plot"<<endl;
@@ -139,6 +140,7 @@ int main(int args, char* argv[] )
     cout << "     scale-factor: increase / decrease data plot line length (default: 0.06) "<<endl<<endl;
     cout << "     GMT5:         Use this exact string (GMT5) to generate GMT5 compatible  "<<endl;
     cout << "                   plotting commands."<<endl<<endl;
+    cout << "     lite:         bare bones version will be plotted"<<endl<<endl;
     return -1;
   }
   
@@ -148,6 +150,15 @@ int main(int args, char* argv[] )
         scaleBar = atof(argv[2]);
         if (string(argv[3]) == "GMT5"){
             gmt5     = true;
+        }
+  }
+  if (args == 5 ){ 
+        scaleBar = atof(argv[2]);
+        if (string(argv[3]) == "GMT5"){
+            gmt5     = true;
+        }
+        if (string(argv[4]) == "lite"){
+            lite     = true;
         }
   }
 
@@ -381,8 +392,13 @@ if(!inp.eof( )){
   outbat << "#!/bin/tcsh" << endl;
 #endif
 
-  outbat << gmt << "gmtset PS_MEDIA Custom_250x280" << endl;
-  outbat << gmt << "psxy " << elevRingFile << " -R-1.6/1.6/-1.6/1.6 -JX7.0  -W1.0p" << pen_delim << "0/0/0 -G230 -V " << multi_seg << " -K -P -X0.75 -Y1.0 > " << psFile << endl;
+  if (lite==true){
+      outbat << gmt << "gmtset PS_MEDIA Custom_200x200" << endl;
+      outbat << gmt << "psxy " << elevRingFile << " -R-1.6/1.6/-1.6/1.6 -JX7.0  -W1.0p" << pen_delim << "0/0/0 -G230 -V " << multi_seg << " -K -P -Xc -Yc > " << psFile << endl;
+  }else{
+        outbat << gmt << "gmtset PS_MEDIA Custom_250x280" << endl;
+        outbat << gmt << "psxy " << elevRingFile << " -R-1.6/1.6/-1.6/1.6 -JX7.0  -W1.0p" << pen_delim << "0/0/0 -G230 -V " << multi_seg << " -K -P -X0.75 -Y1.0 > " << psFile << endl;
+  }
   if(gmt5==true){
     outbat << gmt << "psxy " << cutoffRingFile << " -R -JX  -W0.2,0,4_8:0p  -G255 -V " << multi_seg << " -O -K -P >> " << psFile << endl;
   }else{
@@ -390,7 +406,10 @@ if(!inp.eof( )){
   }
   outbat << gmt << "psxy " << elevRingFile << " -R -JX -W1.0p" << pen_delim << "0/0/0  -V " << multi_seg << " -O -K -P >> " << psFile << endl;
   outbat << gmt << "psxy " << elevRingFile << " -R -JX -W0.5p" << pen_delim << "255/255/255  -V " << multi_seg << " -O -K -P >> " << psFile << endl;
-  outbat << gmt << "pstext " << titleFile << pstext_F <<" -R -JX -N -V  -O -K -P >> " << psFile << endl;
+  
+  if (lite==false){
+    outbat << gmt << "pstext " << titleFile << pstext_F <<" -R -JX -N -V  -O -K -P >> " << psFile << endl;
+  }
 
   outbat << gmt << "psvelo " << mpFile << " -R -JX  -L -W0.5p" << pen_delim << color << " -Se1/0.95/0 -A"<< vector_desc <<
 	" -N  -O -K -P -V >>  " << psFile << endl;
@@ -600,14 +619,11 @@ if(!inp.eof( )){
   }
 
   // create the legend for the size of the multipath bars (1,5,10 meters)
-
-//  mp << " 1.1  -1.59  " << 10.0*scaleBar << "  0.0  0  0  0" << endl;
-  mp << " 1.35  -1.59  " << -10.0*scaleBar << "  0.0  0  0  0" << endl;
-//  mp << " 1.1  -1.49  " << 5.0*scaleBar << "  0.0  0  0  0" << endl;
-  mp << " 1.35  -1.49  " << -5.0*scaleBar << "  0.0  0  0  0" << endl;
-//  mp << " 1.1  -1.39  " << 1.0*scaleBar << "  0.0  0  0  0" << endl;
-  mp << " 1.35  -1.39  " << -1.0*scaleBar << "  0.0  0  0  0" << endl;
-
+  if (lite==false){
+      mp << " 1.35  -1.59  " << -10.0*scaleBar << "  0.0  0  0  0" << endl;
+      mp << " 1.35  -1.49  " << -5.0*scaleBar << "  0.0  0  0  0" << endl;
+      mp << " 1.35  -1.39  " << -1.0*scaleBar << "  0.0  0  0  0" << endl;
+  }
 //ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
    cout << endl << "Now reading the TEQC plot file..." << endl << endl;
    out  << endl << "Now reading the TEQC plot file..." << endl << endl;
@@ -1132,19 +1148,25 @@ if(!inp.eof( )){
   nesw.close();
 
   outbat << gmt << "psxy " << timeXYFile << " -R -JX -V  -Sc0.03 -G0 -O -K -P >> " << psFile << endl;
-  outbat << gmt << "pstext " << timeTagFile << pstext_F << " -R -JX -V -O -K -P >> " << psFile << endl;
+  if (lite==false){
+    outbat << gmt << "pstext " << timeTagFile << pstext_F << " -R -JX -V -O -K -P >> " << psFile << endl;
+  }
   outbat << gmt << "psxy " << crossFile << " -R -JX -V " << multi_seg << " -O -K -P >> " << psFile << endl;
-  outbat << gmt << "pstext " << neswFile << pstext_F << "  -R  -JX -O -K  -N   >> " << psFile << endl;
+  if (lite==false){
+      outbat << gmt << "pstext " << neswFile << pstext_F << "  -R  -JX -O -K  -N   >> " << psFile << endl;
+  }      
   if(gmt5 == true){
       outbat << gmt << "psvelo " << arrowsFile << " -R -JX  -L  -W1.0p" << pen_delim << "50/50/50 -Se1/0.95/7 -A10p+e+g0+p3p,0 -N -O -K -P -V >> " << psFile << endl;
-      outbat << gmt << "pstext " << ringTxtFile << pstext_F << " -: -R  -JX -O -N -W0 -G255  >> " << psFile << endl;
+      if (lite==false){
+          outbat << gmt << "pstext " << ringTxtFile << pstext_F << " -: -R  -JX -O -N -W0 -G255  >> " << psFile << endl;
+      }
   }
   else{
       outbat << gmt << "psvelo " << arrowsFile << " -R -JX  -L  -W1.0p" << pen_delim << "50/50/50 -Se1/0.95/7 -A0.0020/0.035/0.025 -N -O -K -P -V >> " << psFile << endl;
-      outbat << gmt << "pstext " << ringTxtFile << " -R  -JX -O -N -W255o  >> " << psFile << endl;
+      if(lite==false){
+          outbat << gmt << "pstext " << ringTxtFile << " -R  -JX -O -N -W255o  >> " << psFile << endl;
+      }
   }
-//  outbat << "eps2eps " << psFile << " " << psFile << ".eps" << endl;
-//  outbat << "epstopdf " << psFile << ".eps" << endl;
   outbat << "epstopdf " << psFile << endl;
   outbat << "echo ------------------------------ " << endl;
   outbat << "echo ------------------------------ " << endl;
